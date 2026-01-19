@@ -1,18 +1,90 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+// === TABLE DEFINITIONS ===
+
+export const rooms = pgTable("rooms", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // 4-letter room code
+  hostId: text("host_id").notNull(), // Session ID of the host
+  status: text("status", { enum: ["waiting", "playing", "voting", "finished"] }).notNull().default("waiting"),
+  secretWord: text("secret_word"), // The word for the round
+  liarId: integer("liar_id"), // ID of the player who is the liar
+  phaseEndTime: timestamp("phase_end_time"), // For timers
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const players = pgTable("players", {
+  id: serial("id").primaryKey(),
+  roomId: integer("room_id").notNull(),
+  sessionId: text("session_id").notNull(), // To handle reconnects
+  name: text("name").notNull(),
+  isLiar: boolean("is_liar").default(false),
+  hasVoted: boolean("has_voted").default(false),
+  score: integer("score").default(0),
+  joinedAt: timestamp("joined_at").defaultNow(),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+// === RELATIONS ===
+
+export const roomsRelations = relations(rooms, ({ many }) => ({
+  players: many(players),
+}));
+
+export const playersRelations = relations(players, ({ one }) => ({
+  room: one(rooms, {
+    fields: [players.roomId],
+    references: [rooms.id],
+  }),
+}));
+
+// === SCHEMAS ===
+
+export const insertRoomSchema = createInsertSchema(rooms).omit({ 
+  id: true, 
+  createdAt: true, 
+  phaseEndTime: true,
+  secretWord: true,
+  liarId: true 
+});
+
+export const insertPlayerSchema = createInsertSchema(players).omit({ 
+  id: true, 
+  joinedAt: true,
+  isLiar: true,
+  hasVoted: true,
+  score: true 
+});
+
+// === API TYPES ===
+
+export type Room = typeof rooms.$inferSelect;
+export type Player = typeof players.$inferSelect;
+
+export type CreateRoomRequest = {
+  hostName: string;
+};
+
+export type JoinRoomRequest = {
+  code: string;
+  name: string;
+};
+
+export type GameState = {
+  room: Room;
+  players: Player[];
+  me: Player | undefined;
+  timeLeft: number; // calculated on server or client
+};
+
+// WebSocket Messages
+export type WsMessage = 
+  | { type: 'join'; code: string; name: string }
+  | { type: 'create'; name: string }
+  | { type: 'start_game' }
+  | { type: 'vote'; targetId: number }
+  | { type: 'play_again' }
+  | { type: 'state_update'; state: GameState }
+  | { type: 'error'; message: string };

@@ -1,0 +1,288 @@
+import { useEffect } from "react";
+import { useRoute, useLocation } from "wouter";
+import { useGame } from "@/hooks/use-game";
+import { Loader2, Copy, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { PlayerList } from "@/components/PlayerList";
+import { RoleCard } from "@/components/RoleCard";
+import { PhaseTimer } from "@/components/PhaseTimer";
+import { GameCard } from "@/components/GameCard";
+import confetti from "canvas-confetti";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function Room() {
+  const [, params] = useRoute("/room/:code");
+  const [, setLocation] = useLocation();
+  const { gameState, connected, startGame, votePlayer, playAgain } = useGame();
+  const { toast } = useToast();
+
+  const code = params?.code;
+
+  // Redirect if no game state (connection lost/invalid)
+  useEffect(() => {
+    if (!connected && !gameState) {
+      // Allow some time for connection
+      const timer = setTimeout(() => {
+        // Only redirect if still not connected after timeout
+        // In a real app we'd have better reconnection UI
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [connected, gameState]);
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({ title: "Link copied!", description: "Share it with your friends." });
+  };
+
+  const shareCode = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my Liar Game!',
+          text: `Join my room with code: ${code}`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error("Share failed", err);
+      }
+    } else {
+      copyCode();
+    }
+  };
+
+  // Trigger confetti on win
+  useEffect(() => {
+    if (gameState?.room.status === 'finished') {
+      const duration = 3000;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ff0000', '#00ff00', '#0000ff']
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#ff0000', '#00ff00', '#0000ff']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    }
+  }, [gameState?.room.status]);
+
+  if (!gameState) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+        <h2 className="text-xl font-bold text-muted-foreground">Connecting to Room...</h2>
+      </div>
+    );
+  }
+
+  const me = gameState.me;
+  const isHost = gameState.players[0]?.id === me?.id;
+  const status = gameState.room.status;
+
+  return (
+    <div className="min-h-screen pb-20 p-4 md:p-8 max-w-5xl mx-auto">
+      {/* Header */}
+      <header className="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-2xl sticky top-4 z-10 shadow-sm border border-white/20">
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Room Code</span>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={copyCode}>
+            <span className="text-3xl font-black font-mono text-primary tracking-widest">{gameState.room.code}</span>
+            <Copy className="w-4 h-4 text-muted-foreground" />
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Players</div>
+          <span className="text-2xl font-black text-gray-800">{gameState.players.length}</span>
+        </div>
+      </header>
+
+      <AnimatePresence mode="wait">
+        
+        {/* === WAITING ROOM === */}
+        {status === 'waiting' && (
+          <motion.div 
+            key="waiting"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center space-y-2 mb-8">
+              <h2 className="text-4xl font-black text-gray-800">Waiting for Players</h2>
+              <p className="text-lg text-muted-foreground">Share the code to invite friends!</p>
+              <Button variant="outline" className="mt-4 gap-2 rounded-xl" onClick={shareCode}>
+                <Share2 className="w-4 h-4" /> Share Link
+              </Button>
+            </div>
+
+            <PlayerList players={gameState.players} myPlayerId={me?.id} phase={status} />
+
+            {isHost ? (
+              <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center">
+                <Button 
+                  size="lg" 
+                  className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl shadow-xl shadow-primary/30 btn-bounce"
+                  onClick={startGame}
+                  disabled={gameState.players.length < 3}
+                >
+                  {gameState.players.length < 3 ? "Need 3+ Players" : "Start Game!"}
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center mt-12 p-6 bg-white/50 rounded-2xl animate-pulse">
+                <p className="font-bold text-primary">Waiting for host to start...</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* === PLAYING PHASE === */}
+        {status === 'playing' && (
+          <motion.div 
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-8 flex flex-col items-center"
+          >
+            <PhaseTimer 
+              endTime={gameState.room.phaseEndTime ? new Date(gameState.room.phaseEndTime).toISOString() : null} 
+              totalDuration={60} // Should ideally come from server config
+            />
+
+            <RoleCard isLiar={!!me?.isLiar} secretWord={gameState.room.secretWord || "???"} />
+
+            <div className="bg-white/80 backdrop-blur p-6 rounded-2xl shadow-lg border-2 border-primary/10 max-w-md text-center">
+              <h3 className="text-xl font-bold mb-2">Instructions</h3>
+              {me?.isLiar ? (
+                <p>You are the Liar! Listen to others describing the word. Try to blend in and describe something vague!</p>
+              ) : (
+                <p>Describe the secret word carefully! Don't be too obvious, or the Liar will guess it. Don't be too vague, or you'll look suspicious!</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* === VOTING PHASE === */}
+        {status === 'voting' && (
+          <motion.div 
+            key="voting"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-black text-destructive animate-pulse">Who is the Liar?</h2>
+              <p className="text-lg text-muted-foreground mt-2">Tap a player to vote them out!</p>
+            </div>
+
+            <PhaseTimer 
+              endTime={gameState.room.phaseEndTime ? new Date(gameState.room.phaseEndTime).toISOString() : null} 
+              totalDuration={30}
+              className="mb-8"
+            />
+
+            <PlayerList 
+              players={gameState.players} 
+              showVotes 
+              onVote={votePlayer} 
+              myPlayerId={me?.id} 
+              phase={status} 
+            />
+            
+            {me?.hasVoted && (
+              <div className="fixed bottom-8 left-0 right-0 px-4 text-center">
+                <div className="inline-block bg-primary text-white px-6 py-3 rounded-full font-bold shadow-lg">
+                  Vote Submitted! Waiting for others...
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* === RESULTS PHASE === */}
+        {status === 'finished' && (
+          <motion.div 
+            key="finished"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-8 text-center"
+          >
+            <GameCard className="bg-white/95">
+              <div className="space-y-6">
+                <div className="text-6xl mb-4">
+                  {gameState.room.liarId && gameState.players.find(p => p.id === gameState.room.liarId)?.score ? "😈" : "🏆"}
+                </div>
+                
+                <h1 className="text-5xl font-black text-primary">
+                  {/* Determine winner based on score logic - simplified here */}
+                  Game Over!
+                </h1>
+
+                <div className="bg-muted p-6 rounded-2xl">
+                  <p className="text-sm font-bold text-muted-foreground uppercase">The Liar was</p>
+                  <p className="text-3xl font-black text-destructive mt-1">
+                    {gameState.players.find(p => p.id === gameState.room.liarId)?.name || "Unknown"}
+                  </p>
+                </div>
+
+                <div className="bg-green-50 p-6 rounded-2xl border border-green-100">
+                  <p className="text-sm font-bold text-green-700 uppercase">The Secret Word was</p>
+                  <p className="text-3xl font-black text-green-800 mt-1">
+                    {gameState.room.secretWord}
+                  </p>
+                </div>
+              </div>
+            </GameCard>
+            
+            <div className="pt-4">
+              <h3 className="text-xl font-bold mb-4">Scores</h3>
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                {gameState.players
+                  .sort((a, b) => (b.score || 0) - (a.score || 0))
+                  .map((p, idx) => (
+                    <div key={p.id} className="flex justify-between items-center py-3 border-b last:border-0 border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-bold text-gray-400 w-6">#{idx + 1}</span>
+                        <span className="font-bold">{p.name}</span>
+                        {p.isLiar && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">LIAR</span>}
+                      </div>
+                      <span className="font-bold text-primary">{p.score} pts</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {isHost && (
+               <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center">
+                <Button 
+                  size="lg" 
+                  className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl shadow-xl shadow-primary/30 btn-bounce"
+                  onClick={playAgain}
+                >
+                  Play Again
+                </Button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
