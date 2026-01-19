@@ -36,33 +36,33 @@ export default function Home() {
             <Ghost className="w-16 h-16 text-primary" />
           </div>
           <h1 className="text-5xl md:text-6xl font-black text-primary tracking-tight">
-            LIAR<span className="text-accent">.io</span>
+            درەوکەر<span className="text-accent">.io</span>
           </h1>
           <p className="text-lg text-muted-foreground font-medium">
-            Bluff, deceive, and survive the vote!
+            درەوێ بکە، خەڵکی بخاپینە و ژ دەنگدانێ دەرباز ببە!
           </p>
         </motion.div>
 
         <GameCard className="backdrop-blur-sm bg-white/90">
           <Tabs defaultValue="join" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8 p-1 bg-muted/50 rounded-xl">
-              <TabsTrigger value="join" className="rounded-lg font-bold">Join Room</TabsTrigger>
-              <TabsTrigger value="create" className="rounded-lg font-bold">Create Room</TabsTrigger>
+              <TabsTrigger value="join" className="rounded-lg font-bold">بەشداری بکە</TabsTrigger>
+              <TabsTrigger value="create" className="rounded-lg font-bold">ژوورەکێ چێکە</TabsTrigger>
             </TabsList>
 
             <TabsContent value="join" className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground ml-1">YOUR NAME</label>
+                  <label className="text-sm font-bold text-muted-foreground ml-1">ناڤێ تە</label>
                   <Input 
-                    placeholder="Enter your nickname..." 
+                    placeholder="ناڤێ خۆ بنڤیسە..." 
                     className="h-14 text-lg bg-gray-50 border-2 focus:border-primary/50 rounded-xl"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground ml-1">ROOM CODE</label>
+                  <label className="text-sm font-bold text-muted-foreground ml-1">کۆدێ ژوورێ</label>
                   <Input 
                     placeholder="ABCD" 
                     className="h-14 text-lg bg-gray-50 border-2 focus:border-primary/50 rounded-xl uppercase tracking-[0.2em] font-mono text-center"
@@ -77,23 +77,23 @@ export default function Home() {
                   onClick={handleJoin}
                   disabled={joinRoom.isPending || !name || code.length !== 4}
                 >
-                  {joinRoom.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : "Join Game"}
+                  {joinRoom.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : "بەشداری بکە"}
                 </Button>
               </div>
             </TabsContent>
             
             <TabsContent value="create" className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-muted-foreground ml-1">YOUR NAME</label>
+                <label className="text-sm font-bold text-muted-foreground ml-1">ناڤێ تە</label>
                 <Input 
-                  placeholder="Enter your nickname..." 
+                  placeholder="ناڤێ خۆ بنڤیسە..." 
                   className="h-14 text-lg bg-gray-50 border-2 focus:border-primary/50 rounded-xl"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-muted-foreground ml-1">NUMBER OF WORDS (ROUNDS)</label>
+                <label className="text-sm font-bold text-muted-foreground ml-1">هژمارا پەیڤان (Round)</label>
                 <div className="grid grid-cols-5 gap-2">
                   {[1, 2, 3, 4, 5].map((num) => (
                     <Button
@@ -112,9 +112,9 @@ export default function Home() {
                   <Users className="w-5 h-5 text-yellow-600" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-yellow-800">Host a Game</h4>
+                  <h4 className="font-bold text-yellow-800">چێکرنا ژوورێ</h4>
                   <p className="text-sm text-yellow-700 leading-tight mt-1">
-                    You'll get a room code to share with friends. Needs 3+ players.
+                    دێ کۆدەکێ وەرگری دا ل گەل هەڤالێن خۆ پارڤە بکەی. پێدڤی ب ٣+ یاریزانان هەیە.
                   </p>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export default function Home() {
                 onClick={handleCreate}
                 disabled={createRoom.isPending || !name}
               >
-                {createRoom.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : "Create Room"}
+                {createRoom.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : "ژوورەکێ چێکە"}
               </Button>
             </TabsContent>
           </Tabs>

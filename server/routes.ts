@@ -6,17 +6,17 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 
 const WORDS = [
-  "Apple", "Banana", "Dragon", "Elephant", "Fire", "Guitar", "House", "Island", "Jungle", "Kangaroo",
-  "Lemon", "Mountain", "Notebook", "Ocean", "Piano", "Queen", "Rocket", "Sun", "Tiger", "Umbrella",
-  "Violin", "Whale", "Xylophone", "Yacht", "Zebra", "Airplane", "Bridge", "Castle", "Desert", "Eagle",
-  "Forest", "Garden", "Hammer", "Ice", "Jacket", "Kite", "Lizard", "Mirror", "Needle", "Owl",
-  "Pizza", "Quilt", "Robot", "Snake", "Telephone", "Unicorn", "Vampire", "Window", "X-ray", "Yo-yo",
-  "Anvil", "Broom", "Cactus", "Dolphin", "Engine", "Fountain", "Glacier", "Helmet", "Igloo", "Jigsaw",
-  "Keyboard", "Lantern", "Magnet", "Nail", "Oasis", "Parrot", "Quiver", "Rudder", "Saddle", "Telescope",
-  "UFO", "Valve", "Wrench", "Xenon", "Yarn", "Zipper", "Anchor", "Barrel", "Compass", "Dagger",
-  "Easel", "Falcon", "Goggles", "Harp", "Ink", "Jewel", "Kettle", "Lasso", "Muzzle", "Net",
-  "Oar", "Plow", "Quill", "Rope", "Sieve", "Tongs", "Urb", "Vise", "Wagon", "Xeric",
-  "Yoke", "Zest", "Amulet", "Bellows", "Chisel", "Drill", "Emery", "Flail", "Gimlet", "Hinge"
+  "Sێڤ", "مۆز", "ئەژدیها", "فیل", "ئاگری", "گیتار", "خانی", "دوورگە", "دارستان", "کەنگەر",
+  "لێمۆن", "چیا", "دەفتەر", "زەریا", "پیانۆ", "شاژن", "ڕۆکێت", "ڕۆژ", "پڵنگ", "سەوانە",
+  "کەمانچە", "نەهەنگ", "زەرافە", "یاخت", "زێبڕا", "تەیارە", "پرد", "قەلات", "بیابان", "هەڵۆ",
+  "دارستان", "باخچە", "چەکۆچ", "بەفر", "چاکێت", "تەیارۆک", "مارمێلکە", "ئاوێنە", "دەرزی", "کوندەپەپۆ",
+  "پیزا", "لێفە", "ڕۆبۆت", "مار", "تەلەفۆن", "یونیکۆرن", "فامپایەر", "پەنجەرە", "ئێکس-ڕەی", "یۆیۆ",
+  "سندان", "گسک", "کاکتوس", "دۆلفین", "مەکینە", "نافوورە", "بەستەڵەک", "کڵاڤ", "ئیگلۆ", "جیگساو",
+  "کیبۆرد", "فانۆس", "ماگنێت", "بزمار", "واحە", "تەوتی", "تیردان", "سوکان", "زین", "تەلەسکۆپ",
+  "یو ئێف ئۆ", "ڤاڵڤ", "سپانە", "زینۆن", "داڤ", "زیپ", "لەنگەر", "بەرمیل", "قیبلەنما", "خەنجەر",
+  "کۆلکە", "واشە", "چاویلکە", "چەنگ", "مەرەکەب", "جەوهەر", "کتری", "کەمەند", "پوزەوانە", "تۆڕ",
+  "پارۆ", "گۆتە", "پێنوس", "پەت", "بێژینگ", "مەقاش", "باژێڕ", "مەنگەنە", "عەرەبانە", "تەپڵ",
+  "کۆل", "تام", "مۆرهەک", "کۆرە", "تەشوێ", "دریل", "سمپارە", "داس", "مەتهەب", "لولا"
 ];
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
