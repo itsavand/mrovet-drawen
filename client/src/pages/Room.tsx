@@ -279,18 +279,41 @@ export default function Room() {
             </div>
 
             <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center gap-4">
-              {!me?.isReady ? (
-                <Button 
-                  size="lg" 
-                  className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl shadow-xl shadow-primary/30 btn-bounce"
-                  onClick={setReady}
-                >
-                  Ready for Next!
-                </Button>
+              {gameState.room.currentRound >= gameState.room.totalRounds ? (
+                <>
+                  {isHost ? (
+                    <Button 
+                      size="lg" 
+                      className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl shadow-xl shadow-primary/30 btn-bounce"
+                      onClick={playAgain}
+                    >
+                      Play Again
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      size="lg" 
+                      className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl border-2"
+                      onClick={() => setLocation("/")}
+                    >
+                      Leave Game
+                    </Button>
+                  )}
+                </>
               ) : (
-                <div className="w-full max-w-md h-16 flex items-center justify-center bg-green-100 text-green-700 font-bold rounded-2xl border-2 border-green-200">
-                  Waiting for others...
-                </div>
+                !me?.isReady ? (
+                  <Button 
+                    size="lg" 
+                    className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl shadow-xl shadow-primary/30 btn-bounce"
+                    onClick={setReady}
+                  >
+                    Ready for Next!
+                  </Button>
+                ) : (
+                  <div className="w-full max-w-md h-16 flex items-center justify-center bg-green-100 text-green-700 font-bold rounded-2xl border-2 border-green-200">
+                    Waiting for others...
+                  </div>
+                )
               )}
             </div>
           </motion.div>

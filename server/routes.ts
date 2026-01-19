@@ -5,7 +5,19 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 
-const WORDS = ["Apple", "Beach", "Space", "Pizza", "Guitar", "Ninja", "Robot", "Forest", "Dragon", "Coffee"];
+const WORDS = [
+  "Apple", "Banana", "Dragon", "Elephant", "Fire", "Guitar", "House", "Island", "Jungle", "Kangaroo",
+  "Lemon", "Mountain", "Notebook", "Ocean", "Piano", "Queen", "Rocket", "Sun", "Tiger", "Umbrella",
+  "Violin", "Whale", "Xylophone", "Yacht", "Zebra", "Airplane", "Bridge", "Castle", "Desert", "Eagle",
+  "Forest", "Garden", "Hammer", "Ice", "Jacket", "Kite", "Lizard", "Mirror", "Needle", "Owl",
+  "Pizza", "Quilt", "Robot", "Snake", "Telephone", "Unicorn", "Vampire", "Window", "X-ray", "Yo-yo",
+  "Anvil", "Broom", "Cactus", "Dolphin", "Engine", "Fountain", "Glacier", "Helmet", "Igloo", "Jigsaw",
+  "Keyboard", "Lantern", "Magnet", "Nail", "Oasis", "Parrot", "Quiver", "Rudder", "Saddle", "Telescope",
+  "UFO", "Valve", "Wrench", "Xenon", "Yarn", "Zipper", "Anchor", "Barrel", "Compass", "Dagger",
+  "Easel", "Falcon", "Goggles", "Harp", "Ink", "Jewel", "Kettle", "Lasso", "Muzzle", "Net",
+  "Oar", "Plow", "Quill", "Rope", "Sieve", "Tongs", "Urb", "Vise", "Wagon", "Xeric",
+  "Yoke", "Zest", "Amulet", "Bellows", "Chisel", "Drill", "Emery", "Flail", "Gimlet", "Hinge"
+];
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // REST APIs for room creation/joining (initial handshake)
