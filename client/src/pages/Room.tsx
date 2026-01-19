@@ -22,14 +22,16 @@ export default function Room() {
   // Redirect if no game state (connection lost/invalid)
   useEffect(() => {
     if (!connected && !gameState) {
-      // Allow some time for connection
       const timer = setTimeout(() => {
-        // Only redirect if still not connected after timeout
-        // In a real app we'd have better reconnection UI
-      }, 3000);
+        // If we have a stored session, useGame will try to reconnect
+        // But if that fails, we go home
+        if (!gameState) {
+          setLocation("/");
+        }
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [connected, gameState]);
+  }, [connected, gameState, setLocation]);
 
   const copyCode = () => {
     navigator.clipboard.writeText(window.location.href);

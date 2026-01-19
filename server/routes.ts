@@ -88,8 +88,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       try {
         const msg = JSON.parse(data.toString());
 
-        if (msg.type === 'join') {
-          // Handshake with sessionId from REST
+        if (msg.type === 'join' || msg.type === 'reconnect') {
+          // Handshake with sessionId from REST or Reconnect
           const { sessionId, code } = msg;
           const player = await storage.getPlayer(sessionId);
           

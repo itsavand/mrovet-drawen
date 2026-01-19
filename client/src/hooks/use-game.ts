@@ -34,11 +34,12 @@ export function useGame() {
       if (storedSession) {
         try {
           const session = JSON.parse(storedSession);
-          if (session.code && session.name && session.sessionId) {
+          if (session.code && session.sessionId) {
             ws.send(JSON.stringify({
-              type: 'reconnect',
+              type: 'join',
               sessionId: session.sessionId,
-              code: session.code
+              code: session.code,
+              name: session.name || "Anonymous"
             }));
           }
         } catch (e) {
