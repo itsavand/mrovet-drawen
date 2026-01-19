@@ -7,22 +7,25 @@ import { z } from "zod";
 
 export const rooms = pgTable("rooms", {
   id: serial("id").primaryKey(),
-  code: text("code").notNull().unique(), // 4-letter room code
-  hostId: text("host_id").notNull(), // Session ID of the host
+  code: text("code").notNull().unique(),
+  hostId: text("host_id").notNull(),
   status: text("status", { enum: ["waiting", "playing", "voting", "finished"] }).notNull().default("waiting"),
-  secretWord: text("secret_word"), // The word for the round
-  liarId: integer("liar_id"), // ID of the player who is the liar
-  phaseEndTime: timestamp("phase_end_time"), // For timers
+  secretWord: text("secret_word"),
+  liarId: integer("liar_id"),
+  totalRounds: integer("total_rounds").notNull().default(1),
+  currentRound: integer("current_round").notNull().default(1),
+  phaseEndTime: timestamp("phase_end_time"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const players = pgTable("players", {
   id: serial("id").primaryKey(),
   roomId: integer("room_id").notNull(),
-  sessionId: text("session_id").notNull(), // To handle reconnects
+  sessionId: text("session_id").notNull(),
   name: text("name").notNull(),
   isLiar: boolean("is_liar").default(false),
   hasVoted: boolean("has_voted").default(false),
+  isReady: boolean("is_ready").default(false),
   score: integer("score").default(0),
   joinedAt: timestamp("joined_at").defaultNow(),
 });

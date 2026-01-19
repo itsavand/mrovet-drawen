@@ -12,10 +12,11 @@ export default function Home() {
   const { createRoom, joinRoom } = useGame();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [rounds, setRounds] = useState(1);
 
   const handleCreate = () => {
     if (!name.trim()) return;
-    createRoom.mutate(name);
+    createRoom.mutate({ name, rounds });
   };
 
   const handleJoin = () => {
@@ -90,6 +91,21 @@ export default function Home() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-muted-foreground ml-1">NUMBER OF WORDS (ROUNDS)</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <Button
+                      key={num}
+                      variant={rounds === num ? "default" : "outline"}
+                      className={`h-12 text-lg font-bold rounded-xl ${rounds === num ? 'bg-primary shadow-md' : 'bg-gray-50 border-2'}`}
+                      onClick={() => setRounds(num)}
+                    >
+                      {num}
+                    </Button>
+                  ))}
+                </div>
               </div>
               <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 flex gap-3 items-start">
                 <div className="bg-yellow-100 p-2 rounded-lg">

@@ -1,10 +1,10 @@
 import { db } from "./db";
 import { rooms, players, type Room, type Player, type CreateRoomRequest } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 export interface IStorage {
-  createRoom(hostName: string): Promise<{ room: Room; player: Player; sessionId: string }>;
+  createRoom(hostName: string, rounds?: number): Promise<{ room: Room; player: Player; sessionId: string }>;
   joinRoom(code: string, playerName: string): Promise<{ room: Room; player: Player; sessionId: string }>;
   getRoom(code: string): Promise<Room | undefined>;
   getRoomPlayers(roomId: number): Promise<Player[]>;
@@ -12,13 +12,17 @@ export interface IStorage {
   
   // Game Logic Methods
   updateRoomStatus(roomId: number, status: Room["status"], phaseEndTime?: Date): Promise<void>;
+  updateRoomRound(roomId: number, round: number): Promise<void>;
   assignRoles(roomId: number, secretWord: string, liarId: number): Promise<void>;
   submitVote(playerId: number): Promise<void>;
+  updateScore(playerId: number, points: number): Promise<void>;
+  setReady(playerId: number, isReady: boolean): Promise<void>;
   resetRoom(roomId: number): Promise<void>;
+  resetPlayersReady(roomId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async createRoom(hostName: string) {
+  async createRoom(hostName: string, rounds: number = 1) {
     // Generate 4 letter code
     let code = "";
     do {
@@ -31,6 +35,8 @@ export class DatabaseStorage implements IStorage {
       code,
       hostId: sessionId,
       status: "waiting",
+      totalRounds: rounds,
+      currentRound: 1,
     }).returning();
 
     const [player] = await db.insert(players).values({
@@ -40,6 +46,22 @@ export class DatabaseStorage implements IStorage {
     }).returning();
 
     return { room, player, sessionId };
+  }
+
+  async updateRoomRound(roomId: number, round: number) {
+    await db.update(rooms).set({ currentRound: round }).where(eq(rooms.id, roomId));
+  }
+
+  async updateScore(playerId: number, points: number) {
+    await db.execute(sql`UPDATE players SET score = score + ${points} WHERE id = ${playerId}`);
+  }
+
+  async setReady(playerId: number, isReady: boolean) {
+    await db.update(players).set({ isReady }).where(eq(players.id, playerId));
+  }
+
+  async resetPlayersReady(roomId: number) {
+    await db.update(players).set({ isReady: false, hasVoted: false }).where(eq(players.roomId, roomId));
   }
 
   async joinRoom(code: string, playerName: string) {

@@ -81,11 +81,11 @@ export function useGame() {
 
   // Actions
   const createRoom = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async ({ name, rounds }: { name: string; rounds: number }) => {
       const res = await fetch(api.rooms.create.path, {
         method: api.rooms.create.method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, rounds })
       });
       
       if (!res.ok) throw new Error("Failed to create room");
@@ -96,8 +96,10 @@ export function useGame() {
       // Send create message to WS to link connection
       if (socketRef.current?.readyState === WebSocket.OPEN) {
         socketRef.current.send(JSON.stringify({
-          type: 'create',
-          name: data.hostName // Ensure this matches what backend expects or handle via HTTP response linking
+          type: 'join',
+          sessionId: data.sessionId,
+          code: data.code,
+          name: data.name || "Anonymous"
         }));
       }
       setLocation(`/room/${data.code}`);
@@ -162,6 +164,7 @@ export function useGame() {
   const startGame = () => sendAction('start_game');
   const votePlayer = (targetId: number) => sendAction('vote', { targetId });
   const playAgain = () => sendAction('play_again');
+  const setReady = () => sendAction('ready');
 
   return {
     gameState,
@@ -170,6 +173,7 @@ export function useGame() {
     joinRoom,
     startGame,
     votePlayer,
-    playAgain
+    playAgain,
+    setReady
   };
 }

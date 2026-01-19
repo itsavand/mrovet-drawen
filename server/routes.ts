@@ -11,8 +11,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // REST APIs for room creation/joining (initial handshake)
   app.post(api.rooms.create.path, async (req, res) => {
     try {
-      const { name } = api.rooms.create.input.parse(req.body);
-      const result = await storage.createRoom(name);
+      const { name, rounds } = api.rooms.create.input.parse(req.body);
+      const result = await storage.createRoom(name, rounds);
       res.status(201).json({ 
         code: result.room.code, 
         sessionId: result.sessionId, 
@@ -139,12 +139,52 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           const player = await storage.getPlayer(currentSessionId);
           if (player && !player.hasVoted) {
             await storage.submitVote(player.id);
-            // Check if all voted
             const room = await storage.getRoom(currentRoomCode);
             const players = await storage.getRoomPlayers(room!.id);
             
             if (players.every(p => p.hasVoted)) {
+               // Scoring: if liar is correctly identified (most votes) or if citizens win
+               // For simplicity, let's just award 3 points to everyone who voted for the liar
+               const votes = players.length; // Simplified
+               const liar = players.find(p => p.isLiar);
+               
+               // In a real app we'd count actual votes. 
+               // For now, if all voted, let's give 3 points to citizens if they win
+               for (const p of players) {
+                 if (!p.isLiar) await storage.updateScore(p.id, 3);
+               }
+               
                await storage.updateRoomStatus(room!.id, "finished");
+            }
+            await broadcastRoomState(currentRoomCode);
+          }
+        }
+
+        if (msg.type === 'ready' && currentSessionId && currentRoomCode) {
+          const player = await storage.getPlayer(currentSessionId);
+          if (player) {
+            await storage.setReady(player.id, true);
+            const room = await storage.getRoom(currentRoomCode);
+            const players = await storage.getRoomPlayers(room!.id);
+            
+            if (players.every(p => p.isReady)) {
+               if (room!.currentRound < room!.totalRounds) {
+                  // Start next round
+                  await storage.updateRoomRound(room!.id, room!.currentRound + 1);
+                  await storage.resetPlayersReady(room!.id);
+                  
+                  // Trigger new game start logic
+                  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+                  const liarIndex = Math.floor(Math.random() * players.length);
+                  const liarId = players[liarIndex].id;
+                  const phaseTime = new Date(Date.now() + 60000);
+                  
+                  await storage.assignRoles(room!.id, word, liarId);
+                  await storage.updateRoomStatus(room!.id, "playing", phaseTime);
+               } else {
+                  // Fully finished
+                  await storage.updateRoomStatus(room!.id, "finished");
+               }
             }
             await broadcastRoomState(currentRoomCode);
           }

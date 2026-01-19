@@ -30,12 +30,19 @@ export function RoleCard({ isLiar, secretWord }: RoleCardProps) {
 
         {/* Back of Card */}
         <div className="absolute inset-0 backface-hidden rotate-y-180">
-          <div className={`w-full h-full rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 border-4 ${
-            isLiar 
-              ? 'bg-gradient-to-br from-red-500 to-orange-500 border-red-200' 
-              : 'bg-gradient-to-br from-blue-500 to-cyan-500 border-blue-200'
+          <div className={`w-full h-full rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 border-4 transition-all duration-300 ${
+            !isRevealed 
+              ? 'bg-white/90 backdrop-blur-xl border-white' 
+              : isLiar 
+                ? 'bg-gradient-to-br from-red-500 to-orange-500 border-red-200' 
+                : 'bg-gradient-to-br from-blue-500 to-cyan-500 border-blue-200'
           }`}>
-            {isLiar ? (
+            {!isRevealed ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <EyeOff className="w-16 h-16 text-primary/20" />
+                <p className="text-primary/40 font-bold">Card Hidden</p>
+              </div>
+            ) : isLiar ? (
               <>
                 <div className="text-6xl mb-6">😈</div>
                 <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-wider">You are the Liar!</h2>

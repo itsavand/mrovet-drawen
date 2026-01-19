@@ -7,6 +7,7 @@ export const api = {
       path: '/api/rooms',
       input: z.object({
         name: z.string().min(1, "Name is required"),
+        rounds: z.number().min(1).max(5),
       }),
       responses: {
         201: z.object({ code: z.string(), sessionId: z.string(), playerId: z.number() }),

@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Room() {
   const [, params] = useRoute("/room/:code");
   const [, setLocation] = useLocation();
-  const { gameState, connected, startGame, votePlayer, playAgain } = useGame();
+  const { gameState, connected, startGame, votePlayer, playAgain, setReady } = useGame();
   const { toast } = useToast();
 
   const code = params?.code;
@@ -226,6 +226,12 @@ export default function Room() {
             animate={{ opacity: 1, scale: 1 }}
             className="space-y-8 text-center"
           >
+            <div className="mb-4">
+              <span className="text-sm font-bold bg-primary/10 text-primary px-4 py-2 rounded-full uppercase tracking-widest">
+                Round {gameState.room.currentRound} of {gameState.room.totalRounds}
+              </span>
+            </div>
+
             <GameCard className="bg-white/95">
               <div className="space-y-6">
                 <div className="text-6xl mb-4">
@@ -264,6 +270,7 @@ export default function Room() {
                         <span className="font-mono font-bold text-gray-400 w-6">#{idx + 1}</span>
                         <span className="font-bold">{p.name}</span>
                         {p.isLiar && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">LIAR</span>}
+                        {p.isReady && <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-black uppercase">READY</span>}
                       </div>
                       <span className="font-bold text-primary">{p.score} pts</span>
                     </div>
@@ -271,17 +278,21 @@ export default function Room() {
               </div>
             </div>
 
-            {isHost && (
-               <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center">
+            <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center gap-4">
+              {!me?.isReady ? (
                 <Button 
                   size="lg" 
                   className="w-full max-w-md h-16 text-2xl font-bold rounded-2xl shadow-xl shadow-primary/30 btn-bounce"
-                  onClick={playAgain}
+                  onClick={setReady}
                 >
-                  Play Again
+                  Ready for Next!
                 </Button>
-              </div>
-            )}
+              ) : (
+                <div className="w-full max-w-md h-16 flex items-center justify-center bg-green-100 text-green-700 font-bold rounded-2xl border-2 border-green-200">
+                  Waiting for others...
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
