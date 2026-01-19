@@ -80,6 +80,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   }
 
+  // Helper to start the playing phase
+  async function startPlayingPhase(roomId: number, roomCode: string, playersCount: number) {
+    const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+    const liarIndex = Math.floor(Math.random() * playersCount);
+    
+    const players = await storage.getRoomPlayers(roomId);
+    const liarId = players[liarIndex].id;
+    const phaseTime = new Date(Date.now() + 60000);
+    
+    await storage.assignRoles(roomId, word, liarId);
+    await storage.updateRoomStatus(roomId, "playing", phaseTime);
+    await broadcastRoomState(roomCode);
+
+    // Set timeout to switch to voting
+    setTimeout(async () => {
+      const r = await storage.getRoom(roomCode);
+      if (r && r.status === 'playing') {
+        await storage.updateRoomStatus(r.id, "voting");
+        await broadcastRoomState(roomCode);
+      }
+    }, 60000);
+  }
+
   wss.on("connection", (ws) => {
     let currentSessionId: string | null = null;
     let currentRoomCode: string | null = null;
@@ -89,7 +112,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         const msg = JSON.parse(data.toString());
 
         if (msg.type === 'join' || msg.type === 'reconnect') {
-          // Handshake with sessionId from REST or Reconnect
+          // ... existing join logic
           const { sessionId, code } = msg;
           const player = await storage.getPlayer(sessionId);
           
@@ -106,36 +129,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           const room = await storage.getRoom(currentRoomCode);
           if (room && room.hostId === currentSessionId) {
             const players = await storage.getRoomPlayers(room.id);
-            if (players.length < 3) {
-               // In prod enforce min players, dev mode allow 1+ for testing
-               // ws.send(JSON.stringify({ type: 'error', message: "Need 3+ players" }));
-               // return;
-            }
-
-            const word = WORDS[Math.floor(Math.random() * WORDS.length)];
-            const liarIndex = Math.floor(Math.random() * players.length);
-            const liarId = players[liarIndex].id;
-
-            // 5 seconds role reveal + 60 seconds play
-            // Actually let's just go straight to "playing" with a timer
-            const phaseTime = new Date(Date.now() + 60000); // 60s
-            
-            await storage.assignRoles(room.id, word, liarId);
-            await storage.updateRoomStatus(room.id, "playing", phaseTime);
-            await broadcastRoomState(currentRoomCode);
-
-            // Set timeout to switch to voting
-            setTimeout(async () => {
-              const r = await storage.getRoom(currentRoomCode!);
-              if (r && r.status === 'playing') {
-                await storage.updateRoomStatus(r.id, "voting");
-                await broadcastRoomState(currentRoomCode!);
-              }
-            }, 60000);
+            await startPlayingPhase(room.id, currentRoomCode, players.length);
           }
         }
 
         if (msg.type === 'vote' && currentSessionId && currentRoomCode) {
+          // ... existing vote logic
           const player = await storage.getPlayer(currentSessionId);
           if (player && !player.hasVoted) {
             await storage.submitVote(player.id);
@@ -143,17 +142,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
             const players = await storage.getRoomPlayers(room!.id);
             
             if (players.every(p => p.hasVoted)) {
-               // Scoring: if liar is correctly identified (most votes) or if citizens win
-               // For simplicity, let's just award 3 points to everyone who voted for the liar
-               const votes = players.length; // Simplified
-               const liar = players.find(p => p.isLiar);
-               
-               // In a real app we'd count actual votes. 
-               // For now, if all voted, let's give 3 points to citizens if they win
                for (const p of players) {
                  if (!p.isLiar) await storage.updateScore(p.id, 3);
                }
-               
                await storage.updateRoomStatus(room!.id, "finished");
             }
             await broadcastRoomState(currentRoomCode);
@@ -169,20 +160,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
             
             if (players.every(p => p.isReady)) {
                if (room!.currentRound < room!.totalRounds) {
-                  // Start next round
                   await storage.updateRoomRound(room!.id, room!.currentRound + 1);
                   await storage.resetPlayersReady(room!.id);
-                  
-                  // Trigger new game start logic
-                  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
-                  const liarIndex = Math.floor(Math.random() * players.length);
-                  const liarId = players[liarIndex].id;
-                  const phaseTime = new Date(Date.now() + 60000);
-                  
-                  await storage.assignRoles(room!.id, word, liarId);
-                  await storage.updateRoomStatus(room!.id, "playing", phaseTime);
+                  await startPlayingPhase(room!.id, currentRoomCode, players.length);
                } else {
-                  // Fully finished
                   await storage.updateRoomStatus(room!.id, "finished");
                }
             }

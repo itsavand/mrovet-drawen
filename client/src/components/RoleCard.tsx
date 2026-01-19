@@ -29,7 +29,7 @@ export function RoleCard({ isLiar, secretWord }: RoleCardProps) {
         </div>
 
         {/* Back of Card */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180">
+        <div className="absolute inset-0 backface-hidden [transform:rotateY(180deg)]">
           <div className={`w-full h-full rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 border-4 transition-all duration-300 ${
             !isRevealed 
               ? 'bg-white/90 backdrop-blur-xl border-white' 
