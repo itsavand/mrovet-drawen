@@ -5,7 +5,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   // ✅ Add the base here
-  base: "mrovet-drawen",
+  base: "/mrovet-drawen",
 
   plugins: [
     react(), 
