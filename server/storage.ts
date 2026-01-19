@@ -53,7 +53,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateScore(playerId: number, points: number) {
-    await db.execute(sql`UPDATE players SET score = score + ${points} WHERE id = ${playerId}`);
+    await db.execute(sql`UPDATE players SET score = score + ${points}, last_score_at = NOW() WHERE id = ${playerId}`);
   }
 
   async setReady(playerId: number, isReady: boolean) {
